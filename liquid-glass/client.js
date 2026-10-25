@@ -184,27 +184,27 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   opacity: 0.8;
 }
 
-/* Pointer pool: soft blue body plus a cool/warm split at its rim. Bigger and
-   stronger than before, because this is the effect that reads as "liquid". */
+/* Pointer pool: a compact highlight that follows the cursor — small enough to
+   read as a reflection on the glass rather than a lamp sweeping the page. */
 [${LAYER_ATTR}] .lg-pool {
   position: absolute; inset: 0;
   opacity: 0; transition: opacity 420ms ease;
   background:
-    radial-gradient(420px 420px at calc(var(--lg-mx, 50%) + 6px) calc(var(--lg-my, 42%) + 5px), var(--lg-cool), transparent 70%),
-    radial-gradient(420px 420px at calc(var(--lg-mx, 50%) - 6px) calc(var(--lg-my, 42%) - 5px), var(--lg-warm), transparent 70%),
-    radial-gradient(340px 340px at var(--lg-mx, 50%) var(--lg-my, 42%), var(--lg-spec), transparent 64%);
+    radial-gradient(230px 230px at calc(var(--lg-mx, 50%) + 5px) calc(var(--lg-my, 42%) + 4px), var(--lg-cool), transparent 62%),
+    radial-gradient(230px 230px at calc(var(--lg-mx, 50%) - 5px) calc(var(--lg-my, 42%) - 4px), var(--lg-warm), transparent 62%),
+    radial-gradient(190px 190px at var(--lg-mx, 50%) var(--lg-my, 42%), var(--lg-spec), transparent 56%);
   mix-blend-mode: soft-light;
 }
 [${LAYER_ATTR}] .lg-pool::after {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(150px 150px at var(--lg-mx, 50%) var(--lg-my, 42%),
-    rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(86px 86px at var(--lg-mx, 50%) var(--lg-my, 42%),
+    rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 66%);
   mix-blend-mode: plus-lighter;
   opacity: 0.85;
 }
-[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 1; }
+[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.62; }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-pool { mix-blend-mode: screen; }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.55; }
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.34; }
 
 /* Veil: softens the wells into one continuous sheet. */
 [${LAYER_ATTR}] .lg-veil { position: absolute; inset: 0; background: var(--lg-veil); }
