@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Liquid glass">
+  <defs>
+    <linearGradient id="glass" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8fd7ff" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#a99bff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ff9ad5" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#0d1018"/>
+  <circle cx="22" cy="20" r="15" fill="#6fd0ff" opacity="0.55"/>
+  <circle cx="45" cy="43" r="17" fill="#ff86c8" opacity="0.45"/>
+  <circle cx="43" cy="18" r="11" fill="#a98bff" opacity="0.5"/>
+  <rect x="10" y="14" width="44" height="36" rx="12" fill="url(#glass)" opacity="0.35"/>
+  <rect x="10" y="14" width="44" height="36" rx="12" fill="none" stroke="url(#rim)" stroke-width="1.6"/>
+  <path d="M18 34c6-9 14-11 22-9" stroke="#ffffff" stroke-opacity="0.75" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+</svg>
