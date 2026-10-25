@@ -26,7 +26,7 @@ window.__ModuleLoader__.load({
     /** Token-override layer key and module id. */
     const PKG = '@local/dsh-liquid-glass'
     /** Durable settings key; bumped when the defaults change meaning. */
-    const STORAGE_KEY = 'dsh.liquid-glass.v4'
+    const STORAGE_KEY = 'dsh.liquid-glass.v5'
     /** Root attribute the stylesheet hangs off (set on <html>). */
     const ROOT_ATTR = 'data-dsh-liquid'
     /** Locale namespace for the settings row. */
@@ -35,10 +35,11 @@ window.__ModuleLoader__.load({
     const LAYER_ATTR = 'data-dsh-liquid-wallpaper'
 
     /**
-     * Four knobs; everything else is derived. The defaults aim at clear, cool,
-     * frosted glass: a low glass alpha, a high blur, and a blue-leaning hue.
+     * Four knobs, plus the two derived looks. Defaults aim at blue, frosted,
+     * clearly liquid glass: a cool hue, a heavy blur, and a low glass alpha so
+     * the field keeps showing through.
      */
-    const DEFAULTS = Object.freeze({ enabled: true, hue: 212, blur: 38, frost: 0.32, motion: true })
+    const DEFAULTS = Object.freeze({ enabled: true, hue: 218, blur: 52, frost: 0.24, motion: true })
 
     /** Clamp into a range. */
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
@@ -111,13 +112,13 @@ window.__ModuleLoader__.load({
     /**
      * The stylesheet.
      *
-     * Light mode is high-key: a near-white sheet with pale low-saturation
-     * wells, so the result reads clear rather than coloured. Dark mode keeps
-     * the same hues at 14-20% lightness. The pointer pool is the one strong
-     * highlight, because that is what sells a flat sheet as a polished surface.
+     * Light mode keeps a blue cast in every well instead of a neutral grey, so
+     * the field reads as one cool sheet of glass rather than a white page. Dark
+     * mode holds the same hues at 16-24% lightness. The pointer pool and the
+     * grain layer are what sell the "frosted" and "liquid" parts.
      */
     const CSS = `
-html[${ROOT_ATTR}] { background: #eef1f5; }
+html[${ROOT_ATTR}] { background: #dde8f4; }
 html[${ROOT_ATTR}] body, html[${ROOT_ATTR}] #root { background: transparent !important; }
 html[${ROOT_ATTR}] #root { position: relative; z-index: 1; }
 
@@ -125,26 +126,26 @@ html[${ROOT_ATTR}] #root { position: relative; z-index: 1; }
 [${LAYER_ATTR}] {
   position: fixed; inset: 0; z-index: 0; overflow: hidden;
   pointer-events: none; contain: layout paint style;
-  background: linear-gradient(to bottom, #f5f7fa, #e9edf3);
-  --lg-w1: hsl(calc(var(--lg-hue) + 10) 34% 84%);
-  --lg-w2: hsl(calc(var(--lg-hue) - 20) 30% 87%);
-  --lg-w3: hsl(calc(var(--lg-hue) + 28) 28% 89%);
-  --lg-w4: hsl(calc(var(--lg-hue) - 38) 26% 91%);
-  --lg-veil: linear-gradient(to bottom, hsl(calc(var(--lg-hue) + 8) 26% 98% / 0.62), hsl(calc(var(--lg-hue) - 6) 22% 90% / 0.5));
-  --lg-spec: rgba(255, 255, 255, 0.72);
-  --lg-cool: rgba(150, 205, 255, 0.5);
-  --lg-warm: rgba(255, 195, 215, 0.42);
+  background: linear-gradient(160deg, #e8f1fb 0%, #dbe7f6 52%, #cfdff2 100%);
+  --lg-w1: hsl(calc(var(--lg-hue) + 8) 78% 78%);
+  --lg-w2: hsl(calc(var(--lg-hue) - 26) 72% 80%);
+  --lg-w3: hsl(calc(var(--lg-hue) + 34) 66% 82%);
+  --lg-w4: hsl(calc(var(--lg-hue) - 52) 60% 84%);
+  --lg-veil: linear-gradient(to bottom, hsl(calc(var(--lg-hue) + 6) 62% 96% / 0.5), hsl(calc(var(--lg-hue) - 10) 54% 84% / 0.42));
+  --lg-spec: rgba(255, 255, 255, 0.85);
+  --lg-cool: rgba(110, 185, 255, 0.72);
+  --lg-warm: rgba(150, 225, 255, 0.5);
 }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
-  background: linear-gradient(to bottom, #0c1016, #080b10);
-  --lg-w1: hsl(calc(var(--lg-hue) + 10) 42% 20%);
-  --lg-w2: hsl(calc(var(--lg-hue) - 20) 36% 16%);
-  --lg-w3: hsl(calc(var(--lg-hue) + 28) 34% 18%);
-  --lg-w4: hsl(calc(var(--lg-hue) - 38) 30% 14%);
-  --lg-veil: linear-gradient(to bottom, hsl(calc(var(--lg-hue) + 8) 30% 13% / 0.5), hsl(calc(var(--lg-hue) - 6) 26% 6% / 0.66));
-  --lg-spec: rgba(255, 255, 255, 0.62);
-  --lg-cool: rgba(120, 185, 255, 0.62);
-  --lg-warm: rgba(255, 160, 200, 0.4);
+  background: linear-gradient(160deg, #0a1520 0%, #071019 52%, #050b12 100%);
+  --lg-w1: hsl(calc(var(--lg-hue) + 8) 76% 24%);
+  --lg-w2: hsl(calc(var(--lg-hue) - 26) 70% 19%);
+  --lg-w3: hsl(calc(var(--lg-hue) + 34) 64% 21%);
+  --lg-w4: hsl(calc(var(--lg-hue) - 52) 58% 17%);
+  --lg-veil: linear-gradient(to bottom, hsl(calc(var(--lg-hue) + 6) 60% 15% / 0.42), hsl(calc(var(--lg-hue) - 10) 54% 5% / 0.62));
+  --lg-spec: rgba(255, 255, 255, 0.7);
+  --lg-cool: rgba(90, 175, 255, 0.8);
+  --lg-warm: rgba(120, 210, 255, 0.56);
 }
 
 [${LAYER_ATTR}] .lg-well {
@@ -183,39 +184,66 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   opacity: 0.8;
 }
 
-/* Pointer pool: soft white body plus a faint cool/warm split at its rim. */
+/* Pointer pool: soft blue body plus a cool/warm split at its rim. Bigger and
+   stronger than before, because this is the effect that reads as "liquid". */
 [${LAYER_ATTR}] .lg-pool {
   position: absolute; inset: 0;
   opacity: 0; transition: opacity 420ms ease;
   background:
-    radial-gradient(300px 300px at calc(var(--lg-mx, 50%) + 4px) calc(var(--lg-my, 42%) + 3px), var(--lg-cool), transparent 72%),
-    radial-gradient(300px 300px at calc(var(--lg-mx, 50%) - 4px) calc(var(--lg-my, 42%) - 3px), var(--lg-warm), transparent 72%),
-    radial-gradient(260px 260px at var(--lg-mx, 50%) var(--lg-my, 42%), var(--lg-spec), transparent 66%);
+    radial-gradient(420px 420px at calc(var(--lg-mx, 50%) + 6px) calc(var(--lg-my, 42%) + 5px), var(--lg-cool), transparent 70%),
+    radial-gradient(420px 420px at calc(var(--lg-mx, 50%) - 6px) calc(var(--lg-my, 42%) - 5px), var(--lg-warm), transparent 70%),
+    radial-gradient(340px 340px at var(--lg-mx, 50%) var(--lg-my, 42%), var(--lg-spec), transparent 64%);
   mix-blend-mode: soft-light;
 }
 [${LAYER_ATTR}] .lg-pool::after {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(110px 110px at var(--lg-mx, 50%) var(--lg-my, 42%),
-    rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 72%);
+  background: radial-gradient(150px 150px at var(--lg-mx, 50%) var(--lg-my, 42%),
+    rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 70%);
   mix-blend-mode: plus-lighter;
-  opacity: 0.7;
+  opacity: 0.85;
 }
-[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.85; }
+[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 1; }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-pool { mix-blend-mode: screen; }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.42; }
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.55; }
 
 /* Veil: softens the wells into one continuous sheet. */
 [${LAYER_ATTR}] .lg-veil { position: absolute; inset: 0; background: var(--lg-veil); }
 
 /* Frost grain: the fine, even scatter that separates "frosted glass" from
-   "a blurred gradient". Very low opacity; it only shows up close. */
+   "a blurred gradient". Two octave sets at different sizes stop it reading as
+   a repeating tile. */
 [${LAYER_ATTR}] .lg-grain {
-  position: absolute; inset: 0; opacity: 0.13;
+  position: absolute; inset: 0; opacity: 0.24;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23g)'/></svg>");
-  background-size: 180px 180px;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23g)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.34' numOctaves='3' stitchTiles='stitch'/></filter><rect width='420' height='420' filter='url(%23f)' opacity='0.6'/></svg>");
+  background-size: 180px 180px, 420px 420px;
 }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-grain { opacity: 0.09; }
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-grain { opacity: 0.16; }
+
+/* Caustics: the slow bright ribbons light leaves behind when it passes through
+   curved glass. This is the "liquid" half of liquid glass; the wells supply the
+   colour, these supply the sheen. Kept very soft so text stays legible. */
+[${LAYER_ATTR}] .lg-caustic {
+  position: absolute; inset: -30%;
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+  background:
+    radial-gradient(38% 22% at 30% 34%, rgba(255,255,255,0.9), transparent 70%),
+    radial-gradient(30% 18% at 68% 62%, rgba(255,255,255,0.8), transparent 72%),
+    radial-gradient(46% 16% at 52% 82%, rgba(220,240,255,0.7), transparent 74%);
+  filter: blur(22px);
+  animation: lg-caustic 26s ease-in-out infinite alternate;
+}
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-caustic { opacity: 0.3; }
+@keyframes lg-caustic {
+  0%   { transform: translate3d(-4%, 2%, 0) rotate(-2deg) scale(1.02); }
+  50%  { transform: translate3d(3%, -3%, 0) rotate(1.5deg) scale(1.08); }
+  100% { transform: translate3d(6%, 4%, 0) rotate(-1deg) scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) { [${LAYER_ATTR}] .lg-caustic { animation: none; } }
+[${LAYER_ATTR}][data-motion='off'] .lg-caustic { animation: none; }
 
 @keyframes lg-flow {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
@@ -232,21 +260,48 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-grain { opacity:
    shell frame (a direct child of #root) so deeper frames keep their own paint. */
 html[${ROOT_ATTR}] #root > [class*='frame'] { background: transparent !important; }
 
-/* Colour comes from the token layer; these rules add blur, a brightness lift
-   and rim light so each column behaves like a pane in front of the field. */
-html[${ROOT_ATTR}] .lg-glass-rail,
+/* Colour comes from the token layer; these rules add the blur, the frost lift
+   and the rim that make each column behave like a thick pane of frosted glass
+   standing in front of the field. */
 html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow']) {
-  backdrop-filter: blur(var(--lg-blur)) saturate(168%) brightness(1.03);
-  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(168%) brightness(1.03);
+  backdrop-filter: blur(var(--lg-blur)) saturate(235%) brightness(1.06) contrast(1.04);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(235%) brightness(1.06) contrast(1.04);
 }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow']) {
-  backdrop-filter: blur(var(--lg-blur)) saturate(150%) brightness(0.97);
-  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(150%) brightness(0.97);
+  backdrop-filter: blur(var(--lg-blur)) saturate(190%) brightness(0.94) contrast(1.06);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(190%) brightness(0.94) contrast(1.06);
 }
-html[${ROOT_ATTR}] [class*='sidebarCol'] { box-shadow: inset -1px 0 0 rgba(255,255,255,0.5); }
-html[${ROOT_ATTR}] [class*='centerCol'] { box-shadow: inset 1px 0 0 rgba(255,255,255,0.5); }
+/* Rim light on the inner vertical edge: bright hairline, then a soft falloff
+   just inside it, which is how a thick glass edge catches light. */
+html[${ROOT_ATTR}] [class*='sidebarCol'] {
+  box-shadow:
+    inset -1px 0 0 rgba(255,255,255,0.72),
+    inset -3px 0 8px -6px rgba(255,255,255,0.9),
+    inset 0 1px 0 rgba(255,255,255,0.42);
+}
+html[${ROOT_ATTR}] [class*='centerCol'] {
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,0.72),
+    inset 3px 0 8px -6px rgba(255,255,255,0.9),
+    inset 0 1px 0 rgba(255,255,255,0.42);
+}
 html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([class*='sidebarCol'], [class*='centerCol']) {
-  box-shadow: inset 1px 0 0 rgba(255,255,255,0.07);
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,0.13),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+/* Frost scatter over the pane itself. This is a background-image on the column,
+   not a pseudo-element on top of it: a background paints behind the element's
+   own content, so the tooth lands on the glass while the text stays untouched.
+   Opacity is baked into the SVG because background layers cannot carry their
+   own alpha. */
+html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol']) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.055'/></svg>");
+  background-size: 160px 160px;
+  background-blend-mode: overlay;
+}
+html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol']) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.04'/></svg>");
 }
 
 /* Floating panes: full polished rim, soft cast shadow, one corner sheen. */
@@ -347,6 +402,7 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
         part('lg-well lg-well-3'),
         part('lg-well lg-well-4'),
         part('lg-sweep'),
+        part('lg-caustic'),
         part('lg-pool'),
         part('lg-veil'),
         part('lg-grain'),
@@ -525,7 +581,7 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
         ctx.slots.inject('settings.general.item', () => ctx.slots.register({
           name: 'settings.general.item',
           id: 'liquid-glass',
-          order: 11.6,
+          order: 11.7,
           locale: NS,
         }, LiquidGlassRow))
       },
