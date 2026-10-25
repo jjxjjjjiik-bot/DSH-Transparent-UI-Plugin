@@ -30,7 +30,7 @@ window.__ModuleLoader__.load({
     /** Token-override layer key and module id. */
     const PKG = '@local/dsh-liquid-glass'
     /** Durable settings key; bumped when the defaults change meaning. */
-    const STORAGE_KEY = 'dsh.liquid-glass.v6'
+    const STORAGE_KEY = 'dsh.liquid-glass.v7'
     /** Root attribute the stylesheet hangs off (set on <html>). */
     const ROOT_ATTR = 'data-dsh-liquid'
     /** Locale namespace for the settings row. */
@@ -44,22 +44,25 @@ window.__ModuleLoader__.load({
      * `alpha` is how solid the glass is. It sits at 0.55 now: the earlier 0.24
      * made the shell so see-through that text lost its footing. `blue` drives
      * both hue and saturation of the field, `frost` is the sandblasted tooth,
-     * `blur` softens the colour wells.
+     * `blur` softens the colour wells; `glass` is the frosted blur applied to
+     * the shell itself, which is the knob that makes it read as glass.
      */
     const DEFAULTS = Object.freeze({
       enabled: true,
-      alpha: 0.55,
+      alpha: 0.42,
       blue: 46,
-      frost: 0.5,
+      frost: 0.55,
+      glass: 26,
       blur: 46,
       motion: true,
     })
 
     /** Slider ranges, shared by `normalize` and the row. */
     const RANGES = Object.freeze({
-      alpha: { min: 0.12, max: 0.92, step: 0.01 },
+      alpha: { min: 0.02, max: 0.92, step: 0.01 },
       blue: { min: 0, max: 100, step: 1 },
       frost: { min: 0, max: 1, step: 0.01 },
+      glass: { min: 0, max: 60, step: 1 },
       blur: { min: 0, max: 100, step: 1 },
     })
 
@@ -67,18 +70,43 @@ window.__ModuleLoader__.load({
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
     /**
-     * Map the blue knob to a hue: 0 cool cyan, 100 deep ink blue.
+     * The blue knob maps to a *blue band*, not a hue sweep.
+     *
+     * A hue sweep is what made the old version turn purple: 192 + 100 × 0.62
+     * lands on 254°, which is violet. Blue lives around 205–220°; past ~235° the
+     * eye reads indigo and then violet. So the hue only drifts 208 → 218 across
+     * the whole slider, and the "blue-ness" itself comes from saturation and
+     * lightness: a barely-tinted white at 0, a light blue in the middle, a deep
+     * blue at 100.
+     *
      * @param blue - 0..100.
-     * @returns hue in degrees.
+     * @returns hue in degrees, always inside the blue band.
      */
-    const blueHue = (blue) => 192 + blue * 0.62
+    const blueHue = (blue) => 208 + blue * 0.1
 
     /**
-     * Map the blue knob to well saturation: 0 nearly grey, 100 rich.
+     * Map the blue knob to saturation: 0 is almost grey, 100 is rich blue.
      * @param blue - 0..100.
      * @returns saturation percentage.
      */
-    const blueSat = (blue) => 46 + blue * 0.8
+    const blueSat = (blue) => 20 + blue * 0.68
+
+    /**
+     * Map the blue knob to the light-mode field lightness: near-white down to a
+     * solid deep blue. Stops at 49% rather than going darker, because the glass
+     * sheet sits on top of this and dark body text still has to land on it.
+     * @param blue - 0..100.
+     * @returns lightness percentage.
+     */
+    const blueLum = (blue) => 97 - blue * 0.48
+
+    /**
+     * Map the blue knob to the dark-mode field lightness: near-black up to a
+     * deep navy. Kept low so the wallpaper stays a backdrop at night.
+     * @param blue - 0..100.
+     * @returns lightness percentage.
+     */
+    const blueLumDark = (blue) => 7 + blue * 0.21
 
     /** Coerce stored JSON into a complete, in-range settings object. */
     function normalize(raw) {
@@ -94,6 +122,7 @@ window.__ModuleLoader__.load({
         alpha: num('alpha'),
         blue: num('blue'),
         frost: num('frost'),
+        glass: num('glass'),
         blur: num('blur'),
         motion: bool('motion'),
       }
@@ -202,37 +231,40 @@ html[${ROOT_ATTR}] #root { position: relative; z-index: 1; }
 html[${ROOT_ATTR}] #root > [class*='frame'] { background: transparent !important; }
 
 /* ---------- the light field ---------- */
+/* --lg-hue stays inside 208-218°; --lg-sat and --lg-lum carry the blue-ness,
+   so the slider runs white -> pale blue -> deep blue and never reaches violet.
+   --lg-lum-d is the dark-mode counterpart. */
 [${LAYER_ATTR}] {
   position: fixed; inset: 0; z-index: 0; overflow: hidden;
   pointer-events: none; contain: layout paint style;
   background: linear-gradient(160deg,
-    hsl(var(--lg-hue) var(--lg-sat) 96%) 0%,
-    hsl(var(--lg-hue) var(--lg-sat) 93%) 52%,
-    hsl(calc(var(--lg-hue) - 6) var(--lg-sat) 89%) 100%);
-  --lg-w1: hsl(calc(var(--lg-hue) + 8) var(--lg-sat) 78%);
-  --lg-w2: hsl(calc(var(--lg-hue) - 26) calc(var(--lg-sat) - 6) 80%);
-  --lg-w3: hsl(calc(var(--lg-hue) + 34) calc(var(--lg-sat) - 12) 82%);
-  --lg-w4: hsl(calc(var(--lg-hue) - 52) calc(var(--lg-sat) - 18) 84%);
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum) + 4%)) 0%,
+    hsl(var(--lg-hue) var(--lg-sat) var(--lg-lum)) 52%,
+    hsl(var(--lg-hue) calc(var(--lg-sat) + 4%) calc(var(--lg-lum) - 6%)) 100%);
+  --lg-w1: hsl(calc(var(--lg-hue) + 4) var(--lg-sat) calc(var(--lg-lum) - 14%));
+  --lg-w2: hsl(calc(var(--lg-hue) - 6) calc(var(--lg-sat) - 4%) calc(var(--lg-lum) - 10%));
+  --lg-w3: hsl(calc(var(--lg-hue) + 8) calc(var(--lg-sat) - 8%) calc(var(--lg-lum) - 8%));
+  --lg-w4: hsl(calc(var(--lg-hue) - 4) calc(var(--lg-sat) - 12%) calc(var(--lg-lum) - 6%));
   --lg-veil: linear-gradient(to bottom,
-    hsl(calc(var(--lg-hue) + 6) var(--lg-sat) 96% / 0.5),
-    hsl(calc(var(--lg-hue) - 10) var(--lg-sat) 84% / 0.42));
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum) + 4%) / 0.5),
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum) - 8%) / 0.42));
   --lg-spec: rgba(255, 255, 255, 0.85);
   --lg-cool: rgba(110, 185, 255, 0.72);
   --lg-warm: rgba(150, 225, 255, 0.5);
 }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] { background: hsl(var(--lg-hue) var(--lg-sat) 6%); }
+html[${ROOT_ATTR}] body[data-ds-dark-theme] { background: hsl(var(--lg-hue) var(--lg-sat) var(--lg-lum-d)); }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   background: linear-gradient(160deg,
-    hsl(var(--lg-hue) var(--lg-sat) 8%) 0%,
-    hsl(var(--lg-hue) var(--lg-sat) 6%) 52%,
-    hsl(calc(var(--lg-hue) - 6) var(--lg-sat) 4%) 100%);
-  --lg-w1: hsl(calc(var(--lg-hue) + 8) calc(var(--lg-sat) + 14) 22%);
-  --lg-w2: hsl(calc(var(--lg-hue) - 26) calc(var(--lg-sat) + 10) 18%);
-  --lg-w3: hsl(calc(var(--lg-hue) + 34) calc(var(--lg-sat) + 8) 20%);
-  --lg-w4: hsl(calc(var(--lg-hue) - 52) calc(var(--lg-sat) + 4) 16%);
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum-d) + 3%)) 0%,
+    hsl(var(--lg-hue) var(--lg-sat) var(--lg-lum-d)) 52%,
+    hsl(var(--lg-hue) calc(var(--lg-sat) + 4%) calc(var(--lg-lum-d) - 2%)) 100%);
+  --lg-w1: hsl(calc(var(--lg-hue) + 4) calc(var(--lg-sat) + 10%) calc(var(--lg-lum-d) + 13%));
+  --lg-w2: hsl(calc(var(--lg-hue) - 6) calc(var(--lg-sat) + 6%) calc(var(--lg-lum-d) + 9%));
+  --lg-w3: hsl(calc(var(--lg-hue) + 8) calc(var(--lg-sat) + 4%) calc(var(--lg-lum-d) + 11%));
+  --lg-w4: hsl(calc(var(--lg-hue) - 4) var(--lg-sat) calc(var(--lg-lum-d) + 7%));
   --lg-veil: linear-gradient(to bottom,
-    hsl(calc(var(--lg-hue) + 6) var(--lg-sat) 15% / 0.42),
-    hsl(calc(var(--lg-hue) - 10) var(--lg-sat) 5% / 0.62));
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum-d) + 8%) / 0.42),
+    hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum-d) - 2%) / 0.62));
   --lg-spec: rgba(255, 255, 255, 0.7);
   --lg-cool: rgba(90, 175, 255, 0.8);
   --lg-warm: rgba(120, 210, 255, 0.56);
@@ -344,9 +376,37 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .
 [${LAYER_ATTR}][data-motion='off'] .lg-caustic { animation: none; }
 
 /* ---------- the glass ---------- */
-/* Rim light and a cast shadow only. Both are paint properties, and neither
-   creates a containing block, so fixed controls nested in these columns keep
-   the viewport as their anchor. */
+/* The frosted blur lives on ::before, never on the column itself.
+ *
+ * backdrop-filter on an element makes it the containing block for its
+ * position:fixed descendants. The sidebar anchors its collapse button with
+ * position:fixed and left:12px, so blurring the column re-anchored that button
+ * onto the column, stacking it over the brand row and clipping it away once the
+ * sidebar collapsed. A pseudo-element is a childless box of its own: it still
+ * blurs whatever paints behind it, and because it has no descendants it cannot
+ * re-anchor anything. Verified that these three columns carry no pseudo-element
+ * rules of their own, so ::before is free.
+ *
+ * The frame's own ::before is NOT free (the Windows titlebar drag strip uses
+ * it), and it is not touched here.
+ */
+html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow']) {
+  position: relative;
+  isolation: isolate;
+}
+html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow'])::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--lg-glass, 26px)) saturate(180%) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--lg-glass, 26px)) saturate(180%) brightness(1.04);
+}
+html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow'])::before {
+  backdrop-filter: blur(var(--lg-glass, 26px)) saturate(155%) brightness(0.95);
+  -webkit-backdrop-filter: blur(var(--lg-glass, 26px)) saturate(155%) brightness(0.95);
+}
+
+/* Rim light on the inner vertical edge: bright hairline, then a soft falloff
+   just inside it, which is how a thick glass edge catches light. */
 html[${ROOT_ATTR}] [class*='sidebarCol'] {
   box-shadow:
     inset -1px 0 0 rgba(255,255,255,0.72),
@@ -374,11 +434,13 @@ html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rig
   background-size: 160px 160px;
 }
 
-/* Floating panes: polished rim, soft cast shadow, one corner sheen. The sheen
-   is a background gradient rather than a pseudo-element, so it cannot swallow
-   pointer events from the controls inside the composer. */
+/* Floating panes: same ::before trick for the blur, plus a polished rim, a
+   cast shadow and a corner sheen. The sheen is a background gradient rather
+   than ::before, because ::before is already carrying the blur here. */
 html[${ROOT_ATTR}] [data-composer-card],
 html[${ROOT_ATTR}] [role='dialog'] {
+  position: relative;
+  isolation: isolate;
   border-radius: 22px;
   background-image: linear-gradient(148deg,
     rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.08) 34%, rgba(255,255,255,0) 58%);
@@ -388,6 +450,12 @@ html[${ROOT_ATTR}] [role='dialog'] {
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
     inset 0 -1px 0 rgba(255, 255, 255, 0.18);
 }
+html[${ROOT_ATTR}] :is([data-composer-card], [role='dialog'])::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  pointer-events: none; border-radius: inherit;
+  backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
+  -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
+}
 html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dialog']) {
   background-image: linear-gradient(148deg,
     rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 36%, rgba(255,255,255,0) 60%);
@@ -395,6 +463,10 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dia
     0 24px 56px -22px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dialog'])::before {
+  backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
+  -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
 }
 html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
   box-shadow: 0 10px 30px -14px rgba(30, 45, 70, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.62);
@@ -432,7 +504,8 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
       'field.alpha': '透明度',
       'field.blue': '蓝度',
       'field.frost': '磨砂感',
-      'field.blur': '柔化',
+      'field.glass': '玻璃模糊',
+      'field.blur': '背景柔化',
       'field.motion': '流动',
       'state.on': '开',
       'state.off': '关',
@@ -443,7 +516,8 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
       'field.alpha': 'Opacity',
       'field.blue': 'Blue',
       'field.frost': 'Frost',
-      'field.blur': 'Softness',
+      'field.glass': 'Glass blur',
+      'field.blur': 'Backdrop softness',
       'field.motion': 'Drift',
       'state.on': 'On',
       'state.off': 'Off',
@@ -546,6 +620,15 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
             onChange: (frost) => commit({ frost }),
           }),
           h(Slider, {
+            label: t('field.glass'),
+            value: settings.glass,
+            min: RANGES.glass.min,
+            max: RANGES.glass.max,
+            step: RANGES.glass.step,
+            display: `${Math.round(settings.glass)}px`,
+            onChange: (glass) => commit({ glass }),
+          }),
+          h(Slider, {
             label: t('field.blur'),
             value: settings.blur,
             min: RANGES.blur.min,
@@ -585,6 +668,9 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
       root.style.setProperty('--lg-a3', String(Math.max(0.14, a - 0.12)))
       root.style.setProperty('--lg-hue', String(blueHue(settings.blue)))
       root.style.setProperty('--lg-sat', `${blueSat(settings.blue)}%`)
+      root.style.setProperty('--lg-lum', `${blueLum(settings.blue)}%`)
+      root.style.setProperty('--lg-lum-d', `${blueLumDark(settings.blue)}%`)
+      root.style.setProperty('--lg-glass', `${settings.glass}px`)
       root.style.setProperty('--lg-well-blur', `${18 + settings.blur * 1.5}px`)
       root.style.setProperty('--lg-tooth', String(0.04 + settings.frost * 0.3))
       // Pane tooth alpha is baked into the SVG, so the layer swaps as a whole
@@ -676,7 +762,8 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
           root.removeAttribute(ROOT_ATTR)
           for (const name of [
             '--lg-a', '--lg-a2', '--lg-a3', '--lg-hue', '--lg-sat',
-            '--lg-well-blur', '--lg-tooth', '--lg-pane-tooth',
+            '--lg-lum', '--lg-lum-d', '--lg-glass', '--lg-well-blur',
+            '--lg-tooth', '--lg-pane-tooth',
           ]) {
             root.style.removeProperty(name)
           }
