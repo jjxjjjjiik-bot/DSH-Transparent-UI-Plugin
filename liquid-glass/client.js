@@ -253,6 +253,12 @@ html[${ROOT_ATTR}] :is(div):has(> [class*='_sidebarCol'], > [class*='_centerCol'
   --lg-w2: hsl(calc(var(--lg-hue) - 6) calc(var(--lg-sat) - 4%) calc(var(--lg-lum) - 10%));
   --lg-w3: hsl(calc(var(--lg-hue) + 8) calc(var(--lg-sat) - 8%) calc(var(--lg-lum) - 8%));
   --lg-w4: hsl(calc(var(--lg-hue) - 4) calc(var(--lg-sat) - 12%) calc(var(--lg-lum) - 6%));
+  /* Gradient falloff midpoints: the softness slider moves these instead of a
+     blur radius, so the same element repaints rather than gaining a filter. */
+  --lg-w1-fade: 38%;
+  --lg-w2-fade: 38%;
+  --lg-w3-fade: 38%;
+  --lg-w4-fade: 38%;
   --lg-veil: linear-gradient(to bottom,
     hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum) + 4%) / 0.5),
     hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum) - 8%) / 0.42));
@@ -270,6 +276,10 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   --lg-w2: hsl(calc(var(--lg-hue) - 6) calc(var(--lg-sat) + 6%) calc(var(--lg-lum-d) + 9%));
   --lg-w3: hsl(calc(var(--lg-hue) + 8) calc(var(--lg-sat) + 4%) calc(var(--lg-lum-d) + 11%));
   --lg-w4: hsl(calc(var(--lg-hue) - 4) var(--lg-sat) calc(var(--lg-lum-d) + 7%));
+  --lg-w1-fade: 38%;
+  --lg-w2-fade: 38%;
+  --lg-w3-fade: 38%;
+  --lg-w4-fade: 38%;
   --lg-veil: linear-gradient(to bottom,
     hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum-d) + 8%) / 0.42),
     hsl(var(--lg-hue) var(--lg-sat) calc(var(--lg-lum-d) - 2%) / 0.62));
@@ -278,31 +288,39 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   --lg-warm: rgba(120, 210, 255, 0.56);
 }
 
-/* Colour wells. Their softness is the blur slider: this is the one safe place
-   for a blur radius, because the element is ours and holds no controls. */
+/* Colour wells.
+ *
+ * No filter: blur() here. A radial-gradient already fades to transparent on
+ * its own, so a blur on top of it only costs a large offscreen buffer that has
+ * to be rasterised and re-composited every animation frame — several thousand
+ * pixels square per well — while changing the visible result almost not at all.
+ * The softness slider widens the gradient's own falloff instead, which is free
+ * to rasterise because it is just a different paint of the same box.
+ *
+ * will-change: transform stays: it promotes each well to its own compositor
+ * layer so the drift animation runs on the GPU without repainting the field. */
 [${LAYER_ATTR}] .lg-well {
   position: absolute; border-radius: 50%;
-  filter: blur(var(--lg-well-blur, 90px)) saturate(112%);
   will-change: transform;
   animation: lg-flow 32s ease-in-out infinite alternate;
 }
 [${LAYER_ATTR}] .lg-well-1 {
   width: 78vmax; height: 78vmax; left: -20vmax; top: -28vmax;
-  background: radial-gradient(circle, var(--lg-w1), transparent 70%);
+  background: radial-gradient(circle closest-side, var(--lg-w1) 0%, var(--lg-w1) var(--lg-w1-fade), transparent);
 }
 [${LAYER_ATTR}] .lg-well-2 {
   width: 68vmax; height: 68vmax; right: -22vmax; top: -14vmax;
-  background: radial-gradient(circle, var(--lg-w2), transparent 68%);
+  background: radial-gradient(circle closest-side, var(--lg-w2) 0%, var(--lg-w2) var(--lg-w2-fade), transparent);
   animation-duration: 40s; animation-delay: -9s;
 }
 [${LAYER_ATTR}] .lg-well-3 {
   width: 84vmax; height: 84vmax; left: 0; bottom: -40vmax;
-  background: radial-gradient(circle, var(--lg-w3), transparent 72%);
+  background: radial-gradient(circle closest-side, var(--lg-w3) 0%, var(--lg-w3) var(--lg-w3-fade), transparent);
   animation-duration: 48s; animation-delay: -18s;
 }
 [${LAYER_ATTR}] .lg-well-4 {
   width: 56vmax; height: 56vmax; right: -10vmax; bottom: -18vmax;
-  background: radial-gradient(circle, var(--lg-w4), transparent 70%);
+  background: radial-gradient(circle closest-side, var(--lg-w4) 0%, var(--lg-w4) var(--lg-w4-fade), transparent);
   animation-duration: 36s; animation-delay: -24s;
 }
 
@@ -316,34 +334,47 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
   opacity: 0.8;
 }
 
-/* Caustics: the slow bright ribbons light leaves behind through curved glass. */
+/* Caustics: the slow bright ribbons light leaves behind through curved glass.
+   No blur filter: the ribbons are radial gradients that already have soft ends,
+   and a 22px blur over an inset:-30% box meant re-rasterising a region larger
+   than the viewport each frame. The animation is translate-only so it can be
+   composited; the previous rotate+scale forced a full repaint every frame. */
 [${LAYER_ATTR}] .lg-caustic {
   position: absolute; inset: -30%;
   mix-blend-mode: soft-light;
   opacity: 0.55;
+  will-change: transform;
   background:
     radial-gradient(38% 22% at 30% 34%, rgba(255,255,255,0.9), transparent 70%),
     radial-gradient(30% 18% at 68% 62%, rgba(255,255,255,0.8), transparent 72%),
     radial-gradient(46% 16% at 52% 82%, rgba(220,240,255,0.7), transparent 74%);
-  filter: blur(22px);
   animation: lg-caustic 26s ease-in-out infinite alternate;
 }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-caustic { opacity: 0.3; }
 
-/* Pointer highlight: a compact reflection that follows the cursor. */
+/* Pointer highlight.
+ *
+ * This used to be a full-viewport box holding three gradients plus an ::after
+ * layer, so every pointer move re-blended the entire screen. It is now a small
+ * fixed-size element translated to the cursor: moving it costs a compositor
+ * transform, and only its own tile repaints. The gradients are painted once. */
 [${LAYER_ATTR}] .lg-pool {
-  position: absolute; inset: 0;
+  position: absolute; left: 0; top: 0;
+  width: 520px; height: 520px;
+  margin-left: -260px; margin-top: -260px;
+  transform: translate3d(var(--lg-mx, -9999px), var(--lg-my, -9999px), 0);
+  will-change: transform;
   opacity: 0; transition: opacity 420ms ease;
   background:
-    radial-gradient(230px 230px at calc(var(--lg-mx, 50%) + 5px) calc(var(--lg-my, 42%) + 4px), var(--lg-cool), transparent 62%),
-    radial-gradient(230px 230px at calc(var(--lg-mx, 50%) - 5px) calc(var(--lg-my, 42%) - 4px), var(--lg-warm), transparent 62%),
-    radial-gradient(190px 190px at var(--lg-mx, 50%) var(--lg-my, 42%), var(--lg-spec), transparent 56%);
+    radial-gradient(circle at 52% 52%, var(--lg-cool), transparent 55%),
+    radial-gradient(circle at 48% 48%, var(--lg-warm), transparent 55%),
+    radial-gradient(circle at 50% 50%, var(--lg-spec), transparent 42%);
   mix-blend-mode: soft-light;
 }
 [${LAYER_ATTR}] .lg-pool::after {
-  content: ''; position: absolute; inset: 0;
-  background: radial-gradient(86px 86px at var(--lg-mx, 50%) var(--lg-my, 42%),
-    rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 66%);
+  content: ''; position: absolute; inset: 35%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 70%);
   mix-blend-mode: plus-lighter;
   opacity: 0.85;
 }
@@ -373,15 +404,21 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .
   100% { transform: translate3d(-5vmax, 10vmax, 0) scale(0.96); }
 }
 @keyframes lg-caustic {
-  0%   { transform: translate3d(-4%, 2%, 0) rotate(-2deg) scale(1.02); }
-  50%  { transform: translate3d(3%, -3%, 0) rotate(1.5deg) scale(1.08); }
-  100% { transform: translate3d(6%, 4%, 0) rotate(-1deg) scale(1.03); }
+  0%   { transform: translate3d(-4%, 2%, 0); }
+  50%  { transform: translate3d(3%, -3%, 0); }
+  100% { transform: translate3d(6%, 4%, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   [${LAYER_ATTR}] .lg-well, [${LAYER_ATTR}] .lg-caustic { animation: none; }
 }
 [${LAYER_ATTR}][data-motion='off'] .lg-well,
 [${LAYER_ATTR}][data-motion='off'] .lg-caustic { animation: none; }
+/* Suspended while the window is hidden: no frames are produced at all, which is
+   what actually saves the GPU. The static paint stays on screen so regaining
+   focus shows no flicker. */
+[${LAYER_ATTR}][data-suspended='on'] .lg-well,
+[${LAYER_ATTR}][data-suspended='on'] .lg-caustic,
+[${LAYER_ATTR}][data-suspended='on'] .lg-pool { animation-play-state: paused; }
 
 /* ---------- the glass ---------- */
 /* The frosted blur lives on ::before, never on the column itself.
@@ -405,11 +442,9 @@ html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rig
   content: ''; position: absolute; inset: 0; z-index: -1;
   pointer-events: none;
   backdrop-filter: blur(var(--lg-glass, 26px)) saturate(180%) brightness(1.04);
-  -webkit-backdrop-filter: blur(var(--lg-glass, 26px)) saturate(180%) brightness(1.04);
 }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow'])::before {
   backdrop-filter: blur(var(--lg-glass, 26px)) saturate(155%) brightness(0.95);
-  -webkit-backdrop-filter: blur(var(--lg-glass, 26px)) saturate(155%) brightness(0.95);
 }
 
 /* Rim light on the inner vertical edge: bright hairline, then a soft falloff
@@ -468,7 +503,6 @@ html[${ROOT_ATTR}] [data-composer-card]::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
   pointer-events: none; border-radius: inherit;
   backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
-  -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
 }
 html[${ROOT_ATTR}] body[data-ds-dark-theme] [data-composer-card] {
   background-image: linear-gradient(148deg,
@@ -482,7 +516,6 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [data-composer-card]::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
   pointer-events: none; border-radius: inherit;
   backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
-  -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
 }
 html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
   box-shadow: 0 10px 30px -14px rgba(30, 45, 70, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.62);
@@ -679,22 +712,40 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
      */
     function paint(root, layer, settings) {
       const a = settings.alpha
-      root.style.setProperty('--lg-a', String(a))
-      root.style.setProperty('--lg-a2', String(Math.min(0.95, a + 0.2)))
-      root.style.setProperty('--lg-a3', String(Math.max(0.14, a - 0.12)))
-      root.style.setProperty('--lg-hue', String(blueHue(settings.blue)))
-      root.style.setProperty('--lg-sat', `${blueSat(settings.blue)}%`)
-      root.style.setProperty('--lg-lum', `${blueLum(settings.blue)}%`)
-      root.style.setProperty('--lg-lum-d', `${blueLumDark(settings.blue)}%`)
-      root.style.setProperty('--lg-glass', `${settings.glass}px`)
-      root.style.setProperty('--lg-well-blur', `${18 + settings.blur * 1.5}px`)
-      root.style.setProperty('--lg-tooth', String(0.04 + settings.frost * 0.3))
+      /**
+       * Write a custom property only when it actually changed.
+       *
+       * Setting a property to its current value still invalidates the style of
+       * everything that inherits it, so on a slider drag this guard saves a
+       * full-document style recalculation for the knobs that did not move.
+       */
+      const put = (name, value) => {
+        if (root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value)
+      }
+      put('--lg-a', String(a))
+      put('--lg-a2', String(Math.min(0.95, a + 0.2)))
+      put('--lg-a3', String(Math.max(0.14, a - 0.12)))
+      put('--lg-hue', String(blueHue(settings.blue)))
+      put('--lg-sat', `${blueSat(settings.blue)}%`)
+      put('--lg-lum', `${blueLum(settings.blue)}%`)
+      put('--lg-lum-d', `${blueLumDark(settings.blue)}%`)
+      put('--lg-glass', `${settings.glass}px`)
+      // Softness sets where each well starts fading out. A low value keeps the
+      // colour solid almost to the rim (a harder, smaller blob); a high value
+      // starts the falloff early so the blob reads as a broad wash. The stop
+      // stays inside 0-100%, which is what makes it a legal gradient position.
+      const fade = `${82 - settings.blur * 0.5}%`
+      put('--lg-w1-fade', fade)
+      put('--lg-w2-fade', fade)
+      put('--lg-w3-fade', fade)
+      put('--lg-w4-fade', fade)
+      put('--lg-tooth', String(0.04 + settings.frost * 0.3))
       // Pane tooth alpha is baked into the SVG, so the layer swaps as a whole
       // image; near-zero frost drops it entirely.
       const paneTooth = settings.frost < 0.02
         ? 'none'
         : `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='${(0.02 + settings.frost * 0.09).toFixed(3)}'/></svg>")`
-      root.style.setProperty('--lg-pane-tooth', paneTooth)
+      put('--lg-pane-tooth', paneTooth)
       if (layer !== null) layer.dataset.motion = settings.motion ? 'on' : 'off'
     }
 
@@ -717,7 +768,15 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
         let layer = null
         let tokens = null
 
-        /** Apply one settings snapshot. */
+        /**
+         * Apply one settings snapshot.
+         *
+         * The token layer is registered exactly once per enable cycle. Every
+         * token value is a var(--lg-*) reference, so repainting on a slider
+         * drag only rewrites custom properties. Re-registering the layer on
+         * every input event would emit theme/change and force the whole app to
+         * re-render its entire component tree on each pointer move.
+         */
         const sync = (settings) => {
           if (!settings.enabled) {
             root.removeAttribute(ROOT_ATTR)
@@ -727,10 +786,11 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
             tokens = null
             return
           }
+          const first = tokens === null
           root.setAttribute(ROOT_ATTR, '')
           if (layer === null) layer = createLayer()
           paint(root, layer, settings)
-          tokens = ctx.theme.overrideTokens(PKG, tokenLayer())
+          if (first) tokens = ctx.theme.overrideTokens(PKG, tokenLayer())
         }
 
         sync(loadSettings())
@@ -748,14 +808,34 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
         const onPointerMove = (event) => {
           px = event.clientX
           py = event.clientY
-          if (layer !== null) layer.dataset.pointer = 'on'
+          if (layer !== null && layer.dataset.pointer !== 'on') layer.dataset.pointer = 'on'
+          // Skip the rAF bookkeeping entirely when nothing is visible.
           if (frame === 0) frame = window.requestAnimationFrame(flush)
         }
-        const onPointerOut = () => {
-          if (layer !== null) layer.dataset.pointer = 'off'
+        // pointerout fires when the cursor crosses between elements, so check the
+        // real pointer state instead of trusting the event.
+        const onPointerOut = (event) => {
+          if (layer === null) return
+          if (event.relatedTarget !== null) return
+          layer.dataset.pointer = 'off'
         }
         window.addEventListener('pointermove', onPointerMove, { passive: true })
         window.addEventListener('pointerout', onPointerOut, { passive: true })
+
+        /**
+         * Suspend the drifting animation while the window is actually hidden.
+         *
+         * Only visibilitychange is observed, deliberately. A blurred-but-visible
+         * window still composites every frame, so pausing there saves nothing
+         * and only makes the wallpaper look frozen when the user glances over at
+         * it or takes a screenshot. document.hidden is the one state where no
+         * frames are produced at all, which is where the saving actually is.
+         */
+        const setMotionSuspended = (suspended) => {
+          if (layer !== null) layer.dataset.suspended = suspended ? 'on' : 'off'
+        }
+        const onVisibility = () => setMotionSuspended(document.hidden)
+        document.addEventListener('visibilitychange', onVisibility)
 
         const onChange = (event) => {
           if (event instanceof CustomEvent && event.detail != null) sync(normalize(event.detail))
@@ -771,6 +851,7 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
           window.removeEventListener('storage', onStorage)
           window.removeEventListener('pointermove', onPointerMove)
           window.removeEventListener('pointerout', onPointerOut)
+          document.removeEventListener('visibilitychange', onVisibility)
           if (frame !== 0) window.cancelAnimationFrame(frame)
           tokens?.()
           layer?.remove()
@@ -778,7 +859,8 @@ html[${ROOT_ATTR}] :is([role='menu'], [role='listbox']) {
           root.removeAttribute(ROOT_ATTR)
           for (const name of [
             '--lg-a', '--lg-a2', '--lg-a3', '--lg-hue', '--lg-sat',
-            '--lg-lum', '--lg-lum-d', '--lg-glass', '--lg-well-blur',
+            '--lg-lum', '--lg-lum-d', '--lg-glass',
+            '--lg-w1-fade', '--lg-w2-fade', '--lg-w3-fade', '--lg-w4-fade',
             '--lg-tooth', '--lg-pane-tooth',
           ]) {
             root.style.removeProperty(name)
