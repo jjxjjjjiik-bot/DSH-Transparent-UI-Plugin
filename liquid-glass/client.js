@@ -338,12 +338,14 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] {
    No blur filter: the ribbons are radial gradients that already have soft ends,
    and a 22px blur over an inset:-30% box meant re-rasterising a region larger
    than the viewport each frame. The animation is translate-only so it can be
-   composited; the previous rotate+scale forced a full repaint every frame. */
+   composited; the previous rotate+scale forced a full repaint every frame.
+
+   No will-change either: this layer blends with the wells under it, and a
+   promoted layer stops blending with the content it left behind. */
 [${LAYER_ATTR}] .lg-caustic {
   position: absolute; inset: -30%;
   mix-blend-mode: soft-light;
   opacity: 0.55;
-  will-change: transform;
   background:
     radial-gradient(38% 22% at 30% 34%, rgba(255,255,255,0.9), transparent 70%),
     radial-gradient(30% 18% at 68% 62%, rgba(255,255,255,0.8), transparent 72%),
@@ -354,33 +356,41 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-caustic { opacit
 
 /* Pointer highlight.
  *
- * This used to be a full-viewport box holding three gradients plus an ::after
- * layer, so every pointer move re-blended the entire screen. It is now a small
- * fixed-size element translated to the cursor: moving it costs a compositor
- * transform, and only its own tile repaints. The gradients are painted once. */
+ * A fixed-size element translated to the cursor, so moving it is a compositor
+ * transform rather than a full-screen re-blend.
+ *
+ * Blend mode is screen, not soft-light. Measured both against the real
+ * field colours: soft-light cancels out against a mid-tone backdrop and was
+ * effectively invisible in light AND dark mode, which is what made the
+ * highlight disappear. Screen brightens in both, which is what a reflection
+ * should do. The previous all-viewport version only looked alive because its
+ * ::after layer used plus-lighter; the soft-light base was contributing almost
+ * nothing.
+ *
+ * No will-change either: it promotes the element to its own layer, and a
+ * promoted layer has no shared backdrop left to blend with.
+ */
 [${LAYER_ATTR}] .lg-pool {
   position: absolute; left: 0; top: 0;
   width: 520px; height: 520px;
   margin-left: -260px; margin-top: -260px;
   transform: translate3d(var(--lg-mx, -9999px), var(--lg-my, -9999px), 0);
-  will-change: transform;
   opacity: 0; transition: opacity 420ms ease;
   background:
     radial-gradient(circle at 52% 52%, var(--lg-cool), transparent 55%),
     radial-gradient(circle at 48% 48%, var(--lg-warm), transparent 55%),
     radial-gradient(circle at 50% 50%, var(--lg-spec), transparent 42%);
-  mix-blend-mode: soft-light;
+  mix-blend-mode: screen;
 }
 [${LAYER_ATTR}] .lg-pool::after {
   content: ''; position: absolute; inset: 35%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%);
   mix-blend-mode: plus-lighter;
-  opacity: 0.85;
+  opacity: 0.5;
 }
-[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.62; }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}] .lg-pool { mix-blend-mode: screen; }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.34; }
+[${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.55; }
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .lg-pool { opacity: 0.4; }
 
 /* Veil: softens the wells into one continuous sheet. */
 [${LAYER_ATTR}] .lg-veil { position: absolute; inset: 0; background: var(--lg-veil); }
