@@ -167,53 +167,51 @@ window.__ModuleLoader__.load({
           dark: 'rgb(14 18 24 / var(--lg-a))',
         },
         '--dsw-alias-bg-layer-1': {
-          light: 'rgb(255 255 255 / var(--lg-a2))',
-          dark: 'rgb(24 29 37 / var(--lg-a2))',
+          light: 'rgb(255 255 255 / var(--lg-a4))',
+          dark: 'rgb(24 29 37 / var(--lg-a4))',
         },
         '--dsw-alias-bg-layer-2': {
-          light: 'rgb(253 254 255 / var(--lg-a2))',
-          dark: 'rgb(29 35 44 / var(--lg-a2))',
+          light: 'rgb(253 254 255 / var(--lg-a4))',
+          dark: 'rgb(29 35 44 / var(--lg-a4))',
         },
         '--dsw-alias-bg-overlay': {
-          light: 'rgb(252 253 255 / var(--lg-a2))',
-          dark: 'rgb(31 37 47 / var(--lg-a2))',
+          light: 'rgb(252 253 255 / var(--lg-a4))',
+          dark: 'rgb(31 37 47 / var(--lg-a4))',
         },
         '--dsw-alias-bg-module-platform': {
-          light: 'rgb(255 255 255 / var(--lg-a2))',
-          dark: 'rgb(24 29 37 / var(--lg-a2))',
+          light: 'rgb(255 255 255 / var(--lg-a4))',
+          dark: 'rgb(24 29 37 / var(--lg-a4))',
         },
         '--dsw-alias-bg-multi-select': {
-          light: 'rgb(255 255 255 / var(--lg-a2))',
-          dark: 'rgb(29 35 44 / var(--lg-a2))',
+          light: 'rgb(255 255 255 / var(--lg-a4))',
+          dark: 'rgb(29 35 44 / var(--lg-a4))',
         },
         '--dsw-specific-sidebar-fill': {
           light: 'rgb(255 255 255 / var(--lg-a3))',
           dark: 'rgb(11 15 21 / var(--lg-a3))',
         },
         '--dsw-specific-menu': {
-          light: 'rgb(253 254 255 / var(--lg-a2))',
-          dark: 'rgb(28 34 43 / var(--lg-a2))',
+          light: 'rgb(253 254 255 / var(--lg-a4))',
+          dark: 'rgb(28 34 43 / var(--lg-a4))',
         },
-        // The composer pill is the one surface that has to occlude. Its host
+        // The composer pill is one of the surfaces that has to occlude. Its host
         // element carries no backdrop-filter of its own (only the dock root
-        // does), so a translucent fill with no blur lets conversation text read
-        // straight through the input box. `--lg-a4` is deliberately the most
-        // opaque track and the blur is added in the stylesheet.
+        // does), so the blur is added in the stylesheet on a childless ::before.
         '--dsw-specific-input-major': {
           light: 'rgb(255 255 255 / var(--lg-a4))',
           dark: 'rgb(28 34 43 / var(--lg-a4))',
         },
         '--dsw-specific-bubble': {
-          light: 'rgb(255 255 255 / var(--lg-a2))',
-          dark: 'rgb(32 38 48 / var(--lg-a2))',
+          light: 'rgb(255 255 255 / var(--lg-a4))',
+          dark: 'rgb(32 38 48 / var(--lg-a4))',
         },
         '--dsw-alias-settings-card-fill': {
-          light: 'rgb(255 255 255 / var(--lg-a2))',
-          dark: 'rgb(28 34 43 / var(--lg-a2))',
+          light: 'rgb(255 255 255 / var(--lg-a4))',
+          dark: 'rgb(28 34 43 / var(--lg-a4))',
         },
         '--dsw-menu-surface-fill': {
-          light: 'rgb(253 254 255 / var(--lg-a2))',
-          dark: 'rgb(28 34 43 / var(--lg-a2))',
+          light: 'rgb(253 254 255 / var(--lg-a4))',
+          dark: 'rgb(28 34 43 / var(--lg-a4))',
         },
         // The frost slider also drives the menus and the composer card, which
         // carry their own backdrop blur through this token. Reusing it means the
@@ -222,6 +220,17 @@ window.__ModuleLoader__.load({
         '--dsw-menu-backdrop-filter': {
           light: 'blur(var(--lg-glass)) saturate(150%) brightness(1.02)',
           dark: 'blur(var(--lg-glass)) saturate(135%) brightness(0.98)',
+        },
+        // Frost behind modal dialogs. The shell already paints a full-window mask
+        // and already runs that mask through backdrop-filter; the theme just
+        // leaves the value at `none`. Pointing it at the frost radius is what
+        // turns the dimmed backdrop into the sandblasted sheet the settings
+        // dialog and the confirm dialogs sit on, and it costs nothing while no
+        // dialog is open. The mask is a childless element, so filtering it
+        // cannot re-anchor anything.
+        '--dsw-mask-blur': {
+          light: 'blur(calc(var(--lg-glass, 24px) + 6px)) saturate(140%)',
+          dark: 'blur(calc(var(--lg-glass, 24px) + 6px)) saturate(125%)',
         },
         // Deliberately NOT overridden, after an audit of their consumers:
         //
@@ -644,6 +653,28 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([role='menu'], [role='listbox'])
     inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
 }
 
+/* The settings sheet.
+ *
+ * It is a portal-rendered role="dialog" whose class carries a per-build hash, so
+ * the class is not a safe hook. It does carry a stable semantic attribute,
+ * data-shortcut-modal="settings", which is what this uses. Its fill comes from
+ * --dsw-alias-bg-layer-2 (now a near-opaque track), so the only thing added here
+ * is the rim, which is what makes it read as a pane of glass rather than a
+ * rectangle of paint. No backdrop-filter: the shell's own mask behind this sheet
+ * already frosts the page through --dsw-mask-blur. */
+html[${ROOT_ATTR}] [data-shortcut-modal='settings'] {
+  box-shadow:
+    var(--dsw-elevation-prominent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+}
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [data-shortcut-modal='settings'] {
+  box-shadow:
+    var(--dsw-elevation-prominent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+}
+
 /* ================= the settings row ================= */
 .lg-panel { padding: 16px 0; border-bottom: 0.5px solid var(--dsw-alias-border-l2); }
 .lg-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
@@ -924,18 +955,22 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([role='menu'], [role='listbox'])
         if (root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value)
       }
       const p = palette(settings.tint)
-      // Area drives thickness. --lg-a is the content surface (largest, so the
-      // most opaque, and it backs the shell's own scroll-away fades); --lg-a2 is
-      // every floating card and menu; --lg-a3 is the sidebar slab, between the
-      // two. The slider moves all three, so the hierarchy survives any setting
-      // instead of collapsing when the user drags to an extreme.
+      /**
+       * Three fills, by role, not by size.
+       *
+       * `--lg-a` is the content surface, which nothing ever overlaps.
+       * `--lg-a3` is the sidebar slab, which is chrome and reads better with a
+       * little more wallpaper behind it.
+       * `--lg-a4` is every surface the shell treats as opaque and stacks other
+       * content under or over: cards, menus, popovers, message bubbles, the
+       * composer pill and the settings sheet. These MUST almost occlude - when
+       * they were translucent, conversation text read straight through the
+       * settings dialog and the input box, which is a legibility bug and not a
+       * matter of taste. They sit far above the slider value for that reason.
+       */
       put('--lg-a', String(Math.min(0.96, settings.clarity + 0.15)))
-      put('--lg-a2', String(settings.clarity))
       put('--lg-a3', String(Math.min(0.92, settings.clarity + 0.06)))
-      // The composer pill is the only surface that has to occlude rather than
-      // merely tint, so it sits far above the slider value: it is the one place
-      // where text underneath is actively wrong, not just less pretty.
-      put('--lg-a4', String(Math.min(0.97, settings.clarity + 0.42)))
+      put('--lg-a4', String(Math.min(0.97, settings.clarity + 0.45)))
       put('--lg-h1', String(p.h1))
       put('--lg-h2', String(p.h2))
       put('--lg-h3', String(p.h3))
@@ -1138,7 +1173,7 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([role='menu'], [role='listbox'])
           root.removeAttribute(ROOT_ATTR)
           root.removeAttribute('data-glass-off')
           for (const name of [
-            '--lg-a', '--lg-a2', '--lg-a3', '--lg-a4',
+            '--lg-a', '--lg-a3', '--lg-a4',
             '--lg-h1', '--lg-h2', '--lg-h3', '--lg-sat',
             '--lg-lum', '--lg-lum-d', '--lg-glass',
             '--lg-tooth', '--lg-pane-tooth', '--lg-halo', '--lg-hs',
