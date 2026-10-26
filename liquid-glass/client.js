@@ -436,9 +436,16 @@ html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rig
 
 /* Floating panes: same ::before trick for the blur, plus a polished rim, a
    cast shadow and a corner sheen. The sheen is a background gradient rather
-   than ::before, because ::before is already carrying the blur here. */
-html[${ROOT_ATTR}] [data-composer-card],
-html[${ROOT_ATTR}] [role='dialog'] {
+   than ::before, because ::before is already carrying the blur here.
+
+   Deliberately NOT [role='dialog']. The stats detail panel is a role="dialog"
+   portal that positions itself with position: fixed, so forcing position
+   relative here moved it out of viewport coordinates into the end of
+   &lt;body&gt;, where it is invisible: the pill looked like it did nothing on
+   click. Modal dialogs (the other role="dialog") are already translucent and
+   already frosted through the token layer and their own backdrop-filter, so
+   styling them here bought nothing and cost a working control. */
+html[${ROOT_ATTR}] [data-composer-card] {
   position: relative;
   isolation: isolate;
   border-radius: 22px;
@@ -450,13 +457,13 @@ html[${ROOT_ATTR}] [role='dialog'] {
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
     inset 0 -1px 0 rgba(255, 255, 255, 0.18);
 }
-html[${ROOT_ATTR}] :is([data-composer-card], [role='dialog'])::before {
+html[${ROOT_ATTR}] [data-composer-card]::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
   pointer-events: none; border-radius: inherit;
   backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
   -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(190%) brightness(1.05);
 }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dialog']) {
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [data-composer-card] {
   background-image: linear-gradient(148deg,
     rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 36%, rgba(255,255,255,0) 60%);
   box-shadow:
@@ -464,7 +471,9 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dia
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
-html[${ROOT_ATTR}] body[data-ds-dark-theme] :is([data-composer-card], [role='dialog'])::before {
+html[${ROOT_ATTR}] body[data-ds-dark-theme] [data-composer-card]::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  pointer-events: none; border-radius: inherit;
   backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
   -webkit-backdrop-filter: blur(calc(var(--lg-glass, 26px) + 6px)) saturate(160%) brightness(0.98);
 }
