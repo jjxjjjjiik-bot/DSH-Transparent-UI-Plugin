@@ -228,7 +228,15 @@ window.__ModuleLoader__.load({
 html[${ROOT_ATTR}] { background: hsl(var(--lg-hue) var(--lg-sat) 94%); }
 html[${ROOT_ATTR}] body, html[${ROOT_ATTR}] #root { background: transparent !important; }
 html[${ROOT_ATTR}] #root { position: relative; z-index: 1; }
-html[${ROOT_ATTR}] #root > [class*='frame'] { background: transparent !important; }
+/* The shell frame paints an opaque base fill that would cover the wallpaper.
+   It is NOT a direct child of #root (the slot host wraps slots in a
+   div[data-slot] with display:contents, so a child combinator never matched),
+   and matching on 'frame' alone would also strip the background off unrelated
+   frame-named elements such as the attachment image preview. Identify it
+   structurally instead: it is the one container that holds all the columns. */
+html[${ROOT_ATTR}] :is(div):has(> [class*='_sidebarCol'], > [class*='_centerCol']) {
+  background: transparent;
+}
 
 /* ---------- the light field ---------- */
 /* --lg-hue stays inside 208-218°; --lg-sat and --lg-lum carry the blue-ness,
@@ -392,7 +400,6 @@ html[${ROOT_ATTR}] body[data-ds-dark-theme] [${LAYER_ATTR}][data-pointer='on'] .
  */
 html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow']) {
   position: relative;
-  isolation: isolate;
 }
 html[${ROOT_ATTR}] :is([class*='sidebarCol'], [class*='centerCol'], [class*='rightbarCol'], [class*='bottomRow'])::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
