@@ -42,6 +42,14 @@ plugin_manager install_bundle → 目标填本目录的绝对路径
 
 默认 profile 目录是 `%USERPROFILE%\.dsh\profiles\<profile>`。
 
+## 改完先跑这道检查
+
+```
+node liquid-glass/tools/guard.cjs [client.js 路径]
+```
+
+它检查的是这个文件真踩过的坑：CSS 模板里混进反引号（会截断整份样式表，而且第一个反引号会冒充结束符，所以只数反引号是查不出来的——它改成了校验模板是否完整写到最后一个规则）、括号配平、以及上面那三条硬约束。CSS 模板里写注释时**不要用反引号**。
+
 ## 设置位置
 
 **设置 → 通用设置 → 外观** 下方的「液态玻璃壁纸」。三个预设 + 五条滑杆：
